@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speed-Zoon</title>
+<style>
+body{
+  margin:0;
+  overflow:hidden;
+  background:#111;
+  font-family:Arial,sans-serif;
+  touch-action:none;
+}
+canvas{
+  display:block;
+  margin:auto;
+  background:#333;
+}
+#score{
+  position:fixed;
+  top:15px;
+  left:15px;
+  color:white;
+  font-size:22px;
+  font-weight:bold;
+  z-index:5;
+}
+#start{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  padding:16px 35px;
+  font-size:22px;
+  border:0;
+  border-radius:12px;
+  background:#00d4ff;
+  color:#000;
+  font-weight:bold;
+  z-index:10;
+}
+</style>
+</head>
+
+<body>
+
+<div id="score">Score: 0</div>
+<button id="start">START GAME</button>
+<canvas id="game"></canvas>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const scoreText=document.getElementById("score");
+const startBtn=document.getElementById("start");
+
+let W,H;
+let car={x:0,y:0,w:45,h:80};
+let enemy={x:0,y:-100,w:45,h:80};
+let score=0;
+let speed=6;
+let playing=false;
+
+function resize(){
+  W=Math.min(window.innerWidth,500);
+  H=window.innerHeight;
+  canvas.width=W;
+  canvas.height=H;
+  car.x=W/2-car.w/2;
+  car.y=H-120;
+}
+resize();
+window.addEventListener("resize",resize);
+
+function road(){
+  ctx.fillStyle="#333";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle="#222";
+  ctx.fillRect(25,0,W-50,H);
+
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=5;
+  ctx.setLineDash([35,30]);
+
+  ctx.beginPath();
+  ctx.moveTo(W/2,0);
+  ctx.lineTo(W/2,H);
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+}
+
+function drawCar(x,y,color){
+  ctx.fillStyle=color;
+  ctx.fillRect(x,y,car.w,car.h);
+
+  ctx.fillStyle="#111";
+  ctx.fillRect(x+8,y+10,29,20);
+
+  ctx.fillStyle="#8eeeff";
+  ctx.fillRect(x+10,y+13,25,13);
+
+  ctx.fillStyle="#111";
+  ctx.fillRect(x-5,y+12,7,18);
+  ctx.fillRect(x+car.w-2,y+12,7,18);
+  ctx.fillRect(x-5,y+52,7,18);
+  ctx.fillRect(x+car.w-2,y+52,7,18);
+}
+
+function resetEnemy(){
+  enemy.x=55+Math.random()*(W-110);
+  enemy.y=-100;
+}
+
+function gameLoop(){
+  if(!playing) return;
+
+  road();
+
+  enemy.y+=speed;
+
+  if(enemy.y>H){
+    resetEnemy();
+    score++;
+    scoreText.innerText="Score: "+score;
+    speed=Math.min(12,6+score/20);
+  }
+
+  drawCar(car.x,car.y,"#00d4ff");
+  drawCar(enemy.x,enemy.y,"#ff3030");
+
+  if(
+    car.x < enemy.x+enemy.w &&
+    car.x+car.w > enemy.x &&
+    car.y < enemy.y+enemy.h &&
+    car.y+car.h > enemy.y
+  ){
+    playing=false;
+    startBtn.innerText="GAME OVER - PLAY AGAIN";
+    startBtn.style.display="block";
+    return;
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+function startGame(){
+  score=0;
+  speed=6;
+  scoreText.innerText="Score: 0";
+  car.x=W/2-car.w/2;
+  car.y=H-120;
+  resetEnemy();
+  playing=true;
+  startBtn.style.display="none";
+  gameLoop();
+}
+
+startBtn.onclick=startGame;
+
+document.addEventListener("touchmove",e=>{
+  if(!playing)return;
+  let t=e.touches[0];
+  car.x=t.clientX-car.w/2;
+  car.x=Math.max(30,Math.min(W-30-car.w,car.x));
+});
+
+document.addEventListener("mousemove",e=>{
+  if(!playing)return;
+  car.x=e.clientX-car.w/2;
+  car.x=Math.max(30,Math.min(W-30-car.w,car.x));
+});
+</script>
+
+</body>
+</html>
